@@ -11,4 +11,4 @@
 
 ## Phase 5: Browser Agent and Application Explorer
 
-- **Playwright Integration**: Need to integrate the isolated browser contexts with the AI reasoning loop (Explorer role) to build the application model.
+- **Concrete LLMProvider Integration**: The `RestrictedBrowser` and `ApplicationExplorer` structurally integrate the browser with the exploration loop. However, the actual AI reasoning integration (concrete `LLMProvider`) to dynamically infer observations using models like OpenAI or Anthropic is currently stubbed out and needs to be implemented.

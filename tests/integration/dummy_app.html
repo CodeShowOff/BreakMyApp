@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dummy Application</title>
+</head>
+<body>
+    <h1>Welcome to Dummy App</h1>
+    <p>This is a deterministic test page.</p>
+
+    <a href="/login" id="login-link">Login</a>
+    <a href="/about" id="about-link">About Us</a>
+
+    <form action="/submit-login" method="POST" id="login-form">
+        <input type="text" name="username" placeholder="Enter Username" required>
+        <input type="password" name="password" required>
+        <button type="submit" id="submit-btn">Submit</button>
+    </form>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const msg = document.createElement('p');
+            msg.id = 'login-result';
+            msg.innerText = 'Login simulated';
+            document.body.appendChild(msg);
+
+            // Just simulate a fetch so we can catch network metadata
+            fetch('http://localhost/api/login-attempt', { method: 'POST', body: 'mock' }).catch(() => {});
+        });
+    </script>
+</body>
+</html>

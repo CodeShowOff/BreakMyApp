@@ -188,6 +188,9 @@ Object storage stores large immutable artifacts:
 
 PostgreSQL stores references/metadata, not large artifacts.
 
+**Complex Domain Documents (JSON Storage)**
+Concepts that represent a cohesive snapshot of state and do not possess independent lifecycles (e.g., the `ApplicationModel` which contains Pages, Actions, and Objects) are stored as validated JSON blobs within their aggregate root. This enables versioning an entire exploration snapshot at once and simplifies the schema. We defer relational normalization for these components until explicit independent mutability or cross-document analytical querying is required (ADR-0017).
+
 Secrets exist only in a managed secret system. Never store plaintext credentials in PostgreSQL.
 
 ## 10. Multi-Tenancy

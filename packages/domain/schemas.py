@@ -159,3 +159,23 @@ class SandboxResponse(SandboxBase):
     created_at: datetime
     updated_at: datetime
     model_config = ConfigDict(from_attributes=True)
+
+
+class ApplicationModelBase(BaseModel):
+    project_id: str
+    target_id: str
+    test_run_id: str | None = None
+    model_version: str
+    exploration_version: str
+    prompt_version: str
+    browser_version: str
+    model_data: dict[str, Any]
+
+class ApplicationModelCreate(ApplicationModelBase):
+    pass
+
+class ApplicationModelResponse(ApplicationModelBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)

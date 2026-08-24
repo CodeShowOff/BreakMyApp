@@ -221,3 +221,22 @@ class Sandbox(Base):
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     attempt = relationship("ExecutionAttempt", back_populates="sandboxes")
+
+class ApplicationModel(Base):
+    __tablename__ = "application_models"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    target_id = Column(String, ForeignKey("targets.id", ondelete="CASCADE"), nullable=False, index=True)
+    test_run_id = Column(String, ForeignKey("test_runs.id", ondelete="SET NULL"), nullable=True, index=True)
+    model_version = Column(String, nullable=False)
+    exploration_version = Column(String, nullable=False)
+    prompt_version = Column(String, nullable=False)
+    browser_version = Column(String, nullable=False)
+    model_data = Column(JSON, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    project = relationship("Project")
+    target = relationship("Target")
+    test_run = relationship("TestRun")
