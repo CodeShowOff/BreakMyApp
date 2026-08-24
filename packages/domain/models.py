@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Column, DateTime, Enum, ForeignKey, String
+from sqlalchemy import JSON, Column, DateTime, Enum, ForeignKey, String, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -136,3 +136,88 @@ class Credential(Base):
 
     project = relationship("Project")
 
+
+class TestRunStatus(str, enum.Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+    TIMED_OUT = "timed_out"
+    POLICY_BLOCKED = "policy_blocked"
+
+class TestRun(Base):
+    __tablename__ = "test_runs"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    target_id = Column(String, ForeignKey("targets.id", ondelete="CASCADE"), nullable=False, index=True)
+    status: Mapped[TestRunStatus] = mapped_column(Enum(TestRunStatus, name="test_run_status_enum"), default=TestRunStatus.PENDING, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    project = relationship("Project")
+    target = relationship("Target")
+    jobs = relationship("ExecutionJob", back_populates="test_run", cascade="all, delete-orphan")
+
+
+class ExecutionJobStatus(str, enum.Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+class ExecutionJob(Base):
+    __tablename__ = "execution_jobs"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    test_run_id = Column(String, ForeignKey("test_runs.id", ondelete="CASCADE"), nullable=False, index=True)
+    job_type = Column(String, nullable=False)
+    status: Mapped[ExecutionJobStatus] = mapped_column(Enum(ExecutionJobStatus, name="execution_job_status_enum"), default=ExecutionJobStatus.PENDING, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    test_run = relationship("TestRun", back_populates="jobs")
+    attempts = relationship("ExecutionAttempt", back_populates="job", cascade="all, delete-orphan")
+
+
+class ExecutionAttemptStatus(str, enum.Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+class ExecutionAttempt(Base):
+    __tablename__ = "execution_attempts"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    execution_job_id = Column(String, ForeignKey("execution_jobs.id", ondelete="CASCADE"), nullable=False, index=True)
+    attempt_number = Column(Integer, nullable=False, default=1)
+    status: Mapped[ExecutionAttemptStatus] = mapped_column(Enum(ExecutionAttemptStatus, name="execution_attempt_status_enum"), default=ExecutionAttemptStatus.PENDING, nullable=False)
+    log_uri = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    job = relationship("ExecutionJob", back_populates="attempts")
+    sandboxes = relationship("Sandbox", back_populates="attempt", cascade="all, delete-orphan")
+
+
+class SandboxStatus(str, enum.Enum):
+    PROVISIONING = "provisioning"
+    RUNNING = "running"
+    DESTROYED = "destroyed"
+    FAILED = "failed"
+
+class Sandbox(Base):
+    __tablename__ = "sandboxes"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    execution_attempt_id = Column(String, ForeignKey("execution_attempts.id", ondelete="CASCADE"), nullable=False, index=True)
+    provider = Column(String, nullable=False)
+    provider_sandbox_id = Column(String, nullable=True)
+    status: Mapped[SandboxStatus] = mapped_column(Enum(SandboxStatus, name="sandbox_status_enum"), default=SandboxStatus.PROVISIONING, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    attempt = relationship("ExecutionAttempt", back_populates="sandboxes")

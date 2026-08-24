@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
-from .models import AuthorizationStatus, Environment
+from .models import AuthorizationStatus, Environment, TestRunStatus, ExecutionJobStatus, ExecutionAttemptStatus, SandboxStatus
 
 class UserBase(BaseModel):
     email: str
@@ -98,3 +98,64 @@ class CredentialResponse(CredentialBase):
     updated_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
+
+class TestRunBase(BaseModel):
+    project_id: str
+    target_id: str
+
+class TestRunCreate(TestRunBase):
+    pass
+
+class TestRunResponse(TestRunBase):
+    id: str
+    status: TestRunStatus
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ExecutionJobBase(BaseModel):
+    test_run_id: str
+    job_type: str
+
+class ExecutionJobCreate(ExecutionJobBase):
+    pass
+
+class ExecutionJobResponse(ExecutionJobBase):
+    id: str
+    status: ExecutionJobStatus
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ExecutionAttemptBase(BaseModel):
+    execution_job_id: str
+    attempt_number: int
+
+class ExecutionAttemptCreate(ExecutionAttemptBase):
+    pass
+
+class ExecutionAttemptResponse(ExecutionAttemptBase):
+    id: str
+    status: ExecutionAttemptStatus
+    log_uri: str | None = None
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SandboxBase(BaseModel):
+    execution_attempt_id: str
+    provider: str
+
+class SandboxCreate(SandboxBase):
+    pass
+
+class SandboxResponse(SandboxBase):
+    id: str
+    provider_sandbox_id: str | None = None
+    status: SandboxStatus
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
