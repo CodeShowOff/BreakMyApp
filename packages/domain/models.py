@@ -31,6 +31,11 @@ class AuthorizationStatus(str, enum.Enum):
     REJECTED = "rejected"
 
 
+class RetestStatus(str, enum.Enum):
+    RESOLVED = "resolved"
+    STILL_VULNERABLE = "still_vulnerable"
+    UNABLE_TO_ESTABLISH_EQUIVALENCE = "unable_to_establish_equivalence"
+
 class FindingStatus(str, enum.Enum):
     CANDIDATE = "candidate"
     VERIFYING = "verifying"
@@ -363,6 +368,58 @@ class TestResult(Base):
     hypothesis = relationship("TestHypothesis")
 
 
+class FindingFingerprint(Base):
+    __tablename__ = "finding_fingerprints"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    target_id = Column(String, ForeignKey("targets.id", ondelete="CASCADE"), nullable=False, index=True)
+    fingerprint_hash = Column(String, nullable=False, index=True)
+    resource = Column(String, nullable=True)
+    operation = Column(String, nullable=True)
+    authorization_boundary = Column(String, nullable=True)
+    root_cause_category = Column(String, nullable=True)
+    strategy = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+    target = relationship("Target")
+    findings = relationship("Finding", back_populates="fingerprint")
+
+
+class ExpectedBehavior(Base):
+    __tablename__ = "expected_behaviors"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    target_id = Column(String, ForeignKey("targets.id", ondelete="CASCADE"), nullable=False, index=True)
+    scope = Column(String, nullable=False)
+    behavior_description = Column(String, nullable=False)
+    created_by = Column(String, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    project = relationship("Project")
+    target = relationship("Target")
+    creator = relationship("User")
+
+
+class SuppressionRule(Base):
+    __tablename__ = "suppression_rules"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    target_id = Column(String, ForeignKey("targets.id", ondelete="CASCADE"), nullable=False, index=True)
+    scope = Column(String, nullable=False)
+    reason = Column(String, nullable=False)
+    created_by = Column(String, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    expiration = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    project = relationship("Project")
+    target = relationship("Target")
+    creator = relationship("User")
+
+
 class Finding(Base):
     __tablename__ = "findings"
 
@@ -371,10 +428,30 @@ class Finding(Base):
     target_id = Column(String, ForeignKey("targets.id", ondelete="CASCADE"), nullable=False, index=True)
     test_run_id = Column(String, ForeignKey("test_runs.id", ondelete="CASCADE"), nullable=False, index=True)
     test_hypothesis_id = Column(String, ForeignKey("test_hypotheses.id", ondelete="SET NULL"), nullable=True, index=True)
+    fingerprint_id = Column(String, ForeignKey("finding_fingerprints.id", ondelete="SET NULL"), nullable=True, index=True)
+    
+    title = Column(String, nullable=False, default="Untitled Finding")
     status: Mapped[FindingStatus] = mapped_column(Enum(FindingStatus, name="finding_status_enum"), default=FindingStatus.CANDIDATE, nullable=False)
     severity: Mapped[SeverityLevel] = mapped_column(Enum(SeverityLevel, name="severity_level_enum"), nullable=False)
     confidence: Mapped[ConfidenceScore] = mapped_column(Enum(ConfidenceScore, name="confidence_score_enum"), nullable=False)
     severity_policy_version = Column(String, nullable=False)
+    
+    affected_identity = Column(String, nullable=True)
+    expected_behavior = Column(String, nullable=True)
+    observed_behavior = Column(String, nullable=True)
+    violated_rule = Column(String, nullable=True)
+    impact = Column(String, nullable=True)
+    reproduction_steps = Column(JSON, nullable=True)
+    evidence = Column(JSON, nullable=True)
+    
+    first_detected = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    last_verified = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    
+    test_strategy = Column(String, nullable=True)
+    strategy_version = Column(String, nullable=True)
+    recommended_remediation = Column(String, nullable=True)
+    retest_status: Mapped[RetestStatus] = mapped_column(Enum(RetestStatus, name="retest_status_enum"), nullable=True)
+    
     details = Column(JSON, nullable=False)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
@@ -383,6 +460,7 @@ class Finding(Base):
     target = relationship("Target")
     test_run = relationship("TestRun")
     hypothesis = relationship("TestHypothesis")
+    fingerprint = relationship("FindingFingerprint", back_populates="findings")
     verification_attempts = relationship("VerificationAttempt", back_populates="finding", cascade="all, delete-orphan")
 
 

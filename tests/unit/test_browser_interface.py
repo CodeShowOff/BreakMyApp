@@ -1,6 +1,9 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
 from packages.browser.interface import RestrictedBrowser
+
 
 @pytest.fixture
 def mock_page():

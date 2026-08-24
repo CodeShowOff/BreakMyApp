@@ -1,7 +1,9 @@
 import pytest
-from packages.domain.models import ConfidenceScore, SeverityLevel
-from packages.domain.schemas import FindingCreate
+
 from packages.ai.verifier import IndependentVerifier
+from packages.domain.models import ConfidenceScore, FindingStatus, SeverityLevel
+from packages.domain.schemas import FindingCreate
+
 
 @pytest.mark.asyncio
 async def test_verifier_confirm_finding():
@@ -12,9 +14,10 @@ async def test_verifier_confirm_finding():
         project_id="proj-123",
         target_id="tgt-456",
         test_run_id="run-789",
-        status="candidate",
-        severity="medium",
-        confidence="weak",
+        title="Test Finding",
+        status=FindingStatus.CANDIDATE,
+        severity=SeverityLevel.MEDIUM,
+        confidence=ConfidenceScore.WEAK,
         severity_policy_version="v0",
         details={
             "identity": "user_a",
@@ -42,9 +45,10 @@ async def test_verifier_reject_false_positive():
         project_id="proj-123",
         target_id="tgt-456",
         test_run_id="run-789",
-        status="candidate",
-        severity="high",
-        confidence="strong",
+        title="Test Finding",
+        status=FindingStatus.CANDIDATE,
+        severity=SeverityLevel.HIGH,
+        confidence=ConfidenceScore.STRONG,
         severity_policy_version="v0",
         details={
             "identity": "user_a",
@@ -70,9 +74,10 @@ async def test_verifier_reject_misleading():
         project_id="proj-123",
         target_id="tgt-456",
         test_run_id="run-789",
-        status="candidate",
-        severity="high",
-        confidence="strong",
+        title="Test Finding",
+        status=FindingStatus.CANDIDATE,
+        severity=SeverityLevel.HIGH,
+        confidence=ConfidenceScore.STRONG,
         severity_policy_version="v0",
         details={
             "identity": "user_a",

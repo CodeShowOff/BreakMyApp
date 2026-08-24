@@ -10,6 +10,7 @@ from .models import (
     ExecutionAttemptStatus,
     ExecutionJobStatus,
     FindingStatus,
+    RetestStatus,
     SandboxStatus,
     SeverityLevel,
     TestRunStatus,
@@ -290,15 +291,85 @@ class TestResultResponse(TestResultBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class FindingFingerprintBase(BaseModel):
+    target_id: str
+    fingerprint_hash: str
+    resource: str | None = None
+    operation: str | None = None
+    authorization_boundary: str | None = None
+    root_cause_category: str | None = None
+    strategy: str | None = None
+
+class FindingFingerprintCreate(FindingFingerprintBase):
+    pass
+
+class FindingFingerprintResponse(FindingFingerprintBase):
+    id: str
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ExpectedBehaviorBase(BaseModel):
+    project_id: str
+    target_id: str
+    scope: str
+    behavior_description: str
+
+class ExpectedBehaviorCreate(ExpectedBehaviorBase):
+    pass
+
+class ExpectedBehaviorResponse(ExpectedBehaviorBase):
+    id: str
+    created_by: str | None = None
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SuppressionRuleBase(BaseModel):
+    project_id: str
+    target_id: str
+    scope: str
+    reason: str
+    expiration: datetime | None = None
+
+class SuppressionRuleCreate(SuppressionRuleBase):
+    pass
+
+class SuppressionRuleResponse(SuppressionRuleBase):
+    id: str
+    created_by: str | None = None
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
 class FindingBase(BaseModel):
     project_id: str
     target_id: str
     test_run_id: str
     test_hypothesis_id: str | None = None
+    fingerprint_id: str | None = None
+    
+    title: str
     status: FindingStatus
     severity: SeverityLevel
     confidence: ConfidenceScore
     severity_policy_version: str
+    
+    affected_identity: str | None = None
+    expected_behavior: str | None = None
+    observed_behavior: str | None = None
+    violated_rule: str | None = None
+    impact: str | None = None
+    reproduction_steps: dict[str, Any] | list[Any] | None = None
+    evidence: dict[str, Any] | list[Any] | None = None
+    
+    test_strategy: str | None = None
+    strategy_version: str | None = None
+    recommended_remediation: str | None = None
+    retest_status: RetestStatus | None = None
+    
     details: dict[str, Any]
 
 class FindingCreate(FindingBase):
@@ -306,6 +377,8 @@ class FindingCreate(FindingBase):
 
 class FindingResponse(FindingBase):
     id: str
+    first_detected: datetime
+    last_verified: datetime
     created_at: datetime
     updated_at: datetime
     model_config = ConfigDict(from_attributes=True)

@@ -1,10 +1,17 @@
-import pytest
-from packages.domain.app_model import ApplicationModelPayload, Page, Action, Object, ConfidenceLevel, Observation
+from packages.domain.app_model import (
+    Action,
+    ApplicationModelPayload,
+    ConfidenceLevel,
+    Object,
+    Observation,
+    Page,
+)
+
 
 def test_application_model_payload_serialization():
     payload = ApplicationModelPayload(
         pages=[
-            Page(id="p1", url_pattern="/login", title="Login Page")
+            Page(id="p1", url_pattern="/login", title="Login Page", description="Login page")
         ],
         actions=[
             Action(id="a1", page_id="p1", name="Submit Login", selector="#submit", method="POST")
