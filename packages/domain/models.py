@@ -20,6 +20,17 @@ class Role(str, enum.Enum):
     MEMBER = "member"
     VIEWER = "viewer"
 
+class Environment(str, enum.Enum):
+    DEVELOPMENT = "development"
+    STAGING = "staging"
+    PREVIEW = "preview"
+
+class AuthorizationStatus(str, enum.Enum):
+    PENDING = "pending"
+    AUTHORIZED = "authorized"
+    REJECTED = "rejected"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -61,6 +72,8 @@ class Project(Base):
 
     organization = relationship("Organization", back_populates="projects")
     members = relationship("ProjectMembership", back_populates="project", cascade="all, delete-orphan")
+    targets = relationship("Target", back_populates="project", cascade="all, delete-orphan")
+
 
 class ProjectMembership(Base):
     __tablename__ = "project_memberships"
@@ -86,3 +99,23 @@ class AuditLog(Base):
     metadata_ = Column("metadata", JSON, nullable=True)
     ip_hash_or_safe_network_metadata = Column(String, nullable=True)
 
+class Target(Base):
+    __tablename__ = "targets"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    base_url = Column(String, nullable=False)
+    environment: Mapped[Environment] = mapped_column(Enum(Environment, name="environment_enum"), nullable=False)
+    allowed_hosts = Column(JSON, default=list, nullable=False)
+    allowed_url_prefixes = Column(JSON, default=list, nullable=False)
+    allowed_ports = Column(JSON, default=list, nullable=False)
+    authorization_status: Mapped[AuthorizationStatus] = mapped_column(Enum(AuthorizationStatus, name="authorization_status_enum"), default=AuthorizationStatus.PENDING, nullable=False)
+    authorization_method = Column(String, nullable=True)
+    authorization_acknowledged_at = Column(DateTime(timezone=True), nullable=True)
+    created_by = Column(String, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    project = relationship("Project", back_populates="targets")
+    creator = relationship("User")

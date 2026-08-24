@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
+from .models import AuthorizationStatus, Environment
 
 class UserBase(BaseModel):
     email: str
@@ -56,3 +57,25 @@ class AuditLogResponse(BaseModel):
 class PaginatedAuditLogs(BaseModel):
     items: list[AuditLogResponse]
     total: int
+
+class TargetBase(BaseModel):
+    name: str
+    base_url: str
+    environment: Environment
+    allowed_hosts: list[str] = Field(default_factory=list)
+    allowed_url_prefixes: list[str] = Field(default_factory=list)
+    allowed_ports: list[int] = Field(default_factory=list)
+
+class TargetCreate(TargetBase):
+    authorization_acknowledged: bool = Field(description="Must explicitly acknowledge authorization to test this target.")
+
+class TargetResponse(TargetBase):
+    id: str
+    project_id: str
+    authorization_status: AuthorizationStatus
+    authorization_method: str | None = None
+    authorization_acknowledged_at: datetime | None = None
+    created_by: str | None = None
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)

@@ -59,6 +59,11 @@ class AuthorizationService:
         role = self._get_project_role(user, project)
         return role is not None and has_minimum_role(role, Role.ADMIN)
 
+    def can_manage_targets(self, user: User, project: Project) -> bool:
+        role = self._get_project_role(user, project)
+        return role is not None and has_minimum_role(role, Role.ADMIN)
+
+
     def can_start_test_run(self, user: User, project: Project) -> bool:
         role = self._get_project_role(user, project)
         return role is not None and has_minimum_role(role, Role.MEMBER)
