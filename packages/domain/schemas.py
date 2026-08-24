@@ -5,10 +5,13 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from .models import (
     AuthorizationStatus,
+    ConfidenceScore,
     Environment,
     ExecutionAttemptStatus,
     ExecutionJobStatus,
+    FindingStatus,
     SandboxStatus,
+    SeverityLevel,
     TestRunStatus,
 )
 
@@ -282,6 +285,58 @@ class TestResultCreate(TestResultBase):
     pass
 
 class TestResultResponse(TestResultBase):
+    id: str
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FindingBase(BaseModel):
+    project_id: str
+    target_id: str
+    test_run_id: str
+    test_hypothesis_id: str | None = None
+    status: FindingStatus
+    severity: SeverityLevel
+    confidence: ConfidenceScore
+    severity_policy_version: str
+    details: dict[str, Any]
+
+class FindingCreate(FindingBase):
+    pass
+
+class FindingResponse(FindingBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class VerificationAttemptBase(BaseModel):
+    finding_id: str
+    execution_attempt_id: str | None = None
+    status: str
+
+class VerificationAttemptCreate(VerificationAttemptBase):
+    pass
+
+class VerificationAttemptResponse(VerificationAttemptBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class VerificationResultBase(BaseModel):
+    verification_attempt_id: str
+    confidence: ConfidenceScore
+    is_reproducible: bool
+    evidence: dict[str, Any]
+    reason: str
+
+class VerificationResultCreate(VerificationResultBase):
+    pass
+
+class VerificationResultResponse(VerificationResultBase):
     id: str
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)

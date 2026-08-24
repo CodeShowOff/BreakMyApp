@@ -31,6 +31,32 @@ class AuthorizationStatus(str, enum.Enum):
     REJECTED = "rejected"
 
 
+class FindingStatus(str, enum.Enum):
+    CANDIDATE = "candidate"
+    VERIFYING = "verifying"
+    CONFIRMED = "confirmed"
+    REJECTED = "rejected"
+    INCONCLUSIVE = "inconclusive"
+    EXPIRED = "expired"
+    RESOLVED = "resolved"
+
+
+class ConfidenceScore(str, enum.Enum):
+    CONFIRMED = "confirmed"
+    STRONG = "strong"
+    WEAK = "weak"
+    INCONCLUSIVE = "inconclusive"
+    FALSE_POSITIVE = "false_positive"
+
+
+class SeverityLevel(str, enum.Enum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+    INFO = "info"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -335,3 +361,55 @@ class TestResult(Base):
 
     attempt = relationship("ExecutionAttempt")
     hypothesis = relationship("TestHypothesis")
+
+
+class Finding(Base):
+    __tablename__ = "findings"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    target_id = Column(String, ForeignKey("targets.id", ondelete="CASCADE"), nullable=False, index=True)
+    test_run_id = Column(String, ForeignKey("test_runs.id", ondelete="CASCADE"), nullable=False, index=True)
+    test_hypothesis_id = Column(String, ForeignKey("test_hypotheses.id", ondelete="SET NULL"), nullable=True, index=True)
+    status: Mapped[FindingStatus] = mapped_column(Enum(FindingStatus, name="finding_status_enum"), default=FindingStatus.CANDIDATE, nullable=False)
+    severity: Mapped[SeverityLevel] = mapped_column(Enum(SeverityLevel, name="severity_level_enum"), nullable=False)
+    confidence: Mapped[ConfidenceScore] = mapped_column(Enum(ConfidenceScore, name="confidence_score_enum"), nullable=False)
+    severity_policy_version = Column(String, nullable=False)
+    details = Column(JSON, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    project = relationship("Project")
+    target = relationship("Target")
+    test_run = relationship("TestRun")
+    hypothesis = relationship("TestHypothesis")
+    verification_attempts = relationship("VerificationAttempt", back_populates="finding", cascade="all, delete-orphan")
+
+
+class VerificationAttempt(Base):
+    __tablename__ = "verification_attempts"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    finding_id = Column(String, ForeignKey("findings.id", ondelete="CASCADE"), nullable=False, index=True)
+    execution_attempt_id = Column(String, ForeignKey("execution_attempts.id", ondelete="SET NULL"), nullable=True, index=True)
+    status = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    finding = relationship("Finding", back_populates="verification_attempts")
+    execution_attempt = relationship("ExecutionAttempt")
+    result = relationship("VerificationResult", back_populates="verification_attempt", uselist=False, cascade="all, delete-orphan")
+
+
+class VerificationResult(Base):
+    __tablename__ = "verification_results"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    verification_attempt_id = Column(String, ForeignKey("verification_attempts.id", ondelete="CASCADE"), nullable=False, index=True, unique=True)
+    confidence: Mapped[ConfidenceScore] = mapped_column(Enum(ConfidenceScore, name="confidence_score_enum"), nullable=False)
+    is_reproducible = Column(Integer, nullable=False, default=0)
+    evidence = Column(JSON, nullable=False)
+    reason = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+    verification_attempt = relationship("VerificationAttempt", back_populates="result")
