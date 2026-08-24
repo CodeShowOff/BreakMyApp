@@ -8,7 +8,7 @@ from temporalio.worker import Worker
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-async def main():
+async def main() -> None:
     temporal_address = os.getenv("TEMPORAL_ADDRESS", "localhost:7233")
     logger.info(f"Connecting to Temporal at {temporal_address}...")
     

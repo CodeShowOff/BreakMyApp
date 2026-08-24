@@ -12,9 +12,9 @@ export default async function Dashboard() {
         <div>
           <h1 className="text-xl font-bold tracking-tighter text-blue-400 mb-8">BreakMyApp</h1>
           <nav className="space-y-2">
-            <a href="/dashboard" className="block px-4 py-2 rounded bg-blue-900/30 text-blue-400 font-medium">Dashboard</a>
-            <a href="/projects" className="block px-4 py-2 rounded hover:bg-slate-800 text-slate-300">Projects</a>
-            <a href="/settings" className="block px-4 py-2 rounded hover:bg-slate-800 text-slate-300">Settings</a>
+            <Link href="/dashboard" className="block px-4 py-2 rounded bg-blue-900/30 text-blue-400 font-medium">Dashboard</Link>
+            <Link href="/projects" className="block px-4 py-2 rounded hover:bg-slate-800 text-slate-300">Projects</Link>
+            <Link href="/settings" className="block px-4 py-2 rounded hover:bg-slate-800 text-slate-300">Settings</Link>
           </nav>
         </div>
         <div className="flex items-center gap-3">

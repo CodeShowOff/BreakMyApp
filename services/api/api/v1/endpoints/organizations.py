@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -20,7 +21,7 @@ async def create_organization(
     request: Request,
     db: Annotated[AsyncSession , Depends(get_db)],
     current_user: Annotated[User , Depends(get_current_user)]
-):
+) -> Organization:
     org = Organization(name=org_in.name)
     db.add(org)
     await db.flush() # flush to get org.id
@@ -35,11 +36,11 @@ async def create_organization(
     
     audit = AuditService(db)
     await audit.log_action(
-        organization_id=org.id,
-        actor_id=current_user.id,
+        organization_id=str(org.id),
+        actor_id=str(current_user.id),
         action="organization.create",
         resource_type="organization",
-        resource_id=org.id,
+        resource_id=str(org.id),
         ip_address=request.client.host if request.client else None
     )
     
@@ -51,7 +52,7 @@ async def create_organization(
 async def list_organizations(
     db: Annotated[AsyncSession , Depends(get_db)],
     current_user: Annotated[User , Depends(get_current_user)]
-):
+) -> Sequence[Organization]:
     # Only return orgs the user is a member of
     result = await db.execute(
         select(Organization)
@@ -65,7 +66,7 @@ async def get_organization(
     org_id: str,
     db: Annotated[AsyncSession , Depends(get_db)],
     current_user: Annotated[User , Depends(get_current_user)]
-):
+) -> Organization:
     result = await db.execute(
         select(Organization).filter(Organization.id == org_id)
     )

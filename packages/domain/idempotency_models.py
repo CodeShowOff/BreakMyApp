@@ -1,6 +1,7 @@
 from sqlalchemy import JSON, Column, DateTime, Integer, String
 
-from packages.domain.models import Base, generate_uuid, utc_now
+from packages.domain.database import Base
+from packages.domain.models import generate_uuid, utc_now
 
 
 class IdempotencyKey(Base):

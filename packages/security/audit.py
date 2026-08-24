@@ -42,7 +42,7 @@ class AuditService:
         resource_id: str,
         metadata: dict[str, Any] | None = None,
         ip_address: str | None = None
-    ):
+    ) -> None:
         """Create a new audit log entry."""
         log_entry = AuditLog(
             organization_id=organization_id,

@@ -1,4 +1,5 @@
 import logging
+import typing
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -10,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> typing.AsyncGenerator[None, None]:
     logger.info("Starting up BreakMyApp API...")
     yield
     logger.info("Shutting down BreakMyApp API...")
@@ -32,14 +33,14 @@ from services.api.api.deps import IdempotentResponseExists
 
 
 @app.exception_handler(IdempotentResponseExists)
-async def idempotency_handler(request: Request, exc: IdempotentResponseExists):
+async def idempotency_handler(request: Request, exc: IdempotentResponseExists) -> JSONResponse:
     return JSONResponse(status_code=cast(int, exc.key.status_code), content=exc.key.response_body)
 
 @app.get("/health")
-async def health_check():
+async def health_check() -> typing.Any:
     return {"status": "ok"}
 
 @app.get("/ready")
-async def readiness_check():
+async def readiness_check() -> typing.Any:
     return {"status": "ready"}
 

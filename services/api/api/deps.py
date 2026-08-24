@@ -32,7 +32,7 @@ async def check_idempotency_key(
     request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
-):
+) -> IdempotencyKey | None:
     if not idempotency_key:
         return None
         

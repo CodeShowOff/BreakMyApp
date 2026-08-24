@@ -1,7 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 
-from clerk_backend_api import authenticate_request_async
+from clerk_backend_api import authenticate_request_async  # type: ignore
 from clerk_backend_api.security import AuthenticateRequestOptions
 from fastapi import HTTPException, Request
 
@@ -33,7 +33,7 @@ class ClerkAuthenticationProvider(AuthenticationProvider):
         try:
             request_state = await authenticate_request_async(req_wrapper, options)
             if request_state.is_signed_in and request_state.payload:
-                return request_state.payload.get("sub")
+                return str(request_state.payload.get("sub")) if request_state.payload.get("sub") else None
         except Exception as e:
             import logging
             logging.getLogger(__name__).warning(f"Clerk authentication failed: {e}")

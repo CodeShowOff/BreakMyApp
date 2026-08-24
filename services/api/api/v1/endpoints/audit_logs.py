@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc
@@ -18,11 +18,11 @@ authz = AuthorizationService()
 @router.get("", response_model=PaginatedAuditLogs)
 async def list_audit_logs(
     organization_id: str,
-    limit: Annotated[int , Query(50, ge=1, le=100)],
-    offset: Annotated[int , Query(0, ge=0)],
     db: Annotated[AsyncSession , Depends(get_db)],
-    current_user: Annotated[User , Depends(get_current_user)]
-):
+    current_user: Annotated[User , Depends(get_current_user)],
+    limit: Annotated[int , Query(ge=1, le=100)] = 50,
+    offset: Annotated[int , Query(ge=0)] = 0
+) -> dict[str, Any]:
     # Fetch org
     result_org = await db.execute(
         select(Organization).options(selectinload(Organization.members)).filter(Organization.id == organization_id)

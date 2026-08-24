@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -23,7 +24,7 @@ async def create_project(
     db: Annotated[AsyncSession , Depends(get_db)],
     current_user: Annotated[User , Depends(get_current_user)],
     idempotency_record: Annotated[IdempotencyKey , Depends(check_idempotency_key)]
-):
+) -> Project:
     # Fetch org to check permissions
     result_org = await db.execute(
         select(Organization).options(selectinload(Organization.members)).filter(Organization.id == project_in.organization_id)
@@ -66,7 +67,7 @@ async def list_projects(
     organization_id: str,
     db: Annotated[AsyncSession , Depends(get_db)],
     current_user: Annotated[User , Depends(get_current_user)]
-):
+) -> Sequence[Project]:
     # Fetch org
     result_org = await db.execute(
         select(Organization).options(selectinload(Organization.members)).filter(Organization.id == organization_id)
@@ -90,7 +91,7 @@ async def get_project(
     project_id: str,
     db: Annotated[AsyncSession , Depends(get_db)],
     current_user: Annotated[User , Depends(get_current_user)]
-):
+) -> Project:
     result = await db.execute(
         select(Project)
         .options(selectinload(Project.members), selectinload(Project.organization).selectinload(Organization.members))

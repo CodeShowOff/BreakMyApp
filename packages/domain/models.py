@@ -3,15 +3,15 @@ import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import JSON, Column, DateTime, Enum, ForeignKey, String
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
 
 
-def generate_uuid():
+def generate_uuid() -> str:
     return str(uuid.uuid4())
 
-def utc_now():
+def utc_now() -> datetime:
     return datetime.now(UTC)
 
 class Role(str, enum.Enum):
@@ -45,7 +45,7 @@ class OrganizationMembership(Base):
 
     user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     organization_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), primary_key=True)
-    role = Column(Enum(Role, name="role_enum"), nullable=False, default=Role.VIEWER)
+    role: Mapped[Role] = mapped_column(Enum(Role, name="role_enum"), nullable=False, default=Role.VIEWER)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     user = relationship("User", back_populates="organizations")
@@ -67,7 +67,7 @@ class ProjectMembership(Base):
 
     user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), primary_key=True)
-    role = Column(Enum(Role, name="role_enum"), nullable=False, default=Role.VIEWER)
+    role: Mapped[Role] = mapped_column(Enum(Role, name="role_enum"), nullable=False, default=Role.VIEWER)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     user = relationship("User", back_populates="projects")
