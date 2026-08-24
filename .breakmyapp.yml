@@ -1,0 +1,20 @@
+target:
+  url: https://staging.example.com
+
+roles:
+  - name: customer_a
+    credential: customer-a
+
+  - name: customer_b
+    credential: customer-b
+
+strategies:
+  - cross_account
+  - role_boundary
+  - entitlement
+  - sensitive_data
+  - business_rules
+
+fail_on:
+  - confirmed_critical
+  - confirmed_high

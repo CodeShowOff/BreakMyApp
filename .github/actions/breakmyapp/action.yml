@@ -1,0 +1,52 @@
+name: "BreakMyApp Security Test"
+description: "Run adversarial security tests against your staging application"
+inputs:
+  config-file:
+    description: "Path to .breakmyapp.yml"
+    required: false
+    default: ".breakmyapp.yml"
+  api-url:
+    description: "BreakMyApp API URL"
+    required: false
+    default: "https://api.breakmyapp.com"
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        
+    - name: Install BreakMyApp CLI
+      shell: bash
+      run: |
+        # In a real scenario, this would be: pip install breakmyapp
+        # Here we install the dependencies and the local package
+        pip install typer pyyaml rich httpx
+        if [ -f "pyproject.toml" ]; then
+          pip install -e .
+        fi
+        
+    - name: Fetch OIDC Token
+      id: get_token
+      uses: actions/github-script@v7
+      with:
+        script: |
+          try {
+            const token = await core.getIDToken('breakmyapp.com')
+            core.setOutput('oidc_token', token)
+          } catch(e) {
+            core.warning('OIDC Token not available. Ensure workflow has permissions { id-token: write }')
+          }
+          
+    - name: Run BreakMyApp Test
+      shell: bash
+      env:
+        BMA_OIDC_TOKEN: ${{ steps.get_token.outputs.oidc_token }}
+      run: |
+        CMD="breakmyapp test --ci --config ${{ inputs.config-file }} --api-url ${{ inputs.api-url }}"
+        if [ -n "$BMA_OIDC_TOKEN" ]; then
+          CMD="$CMD --oidc-token $BMA_OIDC_TOKEN"
+        fi
+        echo "Running: $CMD"
+        $CMD
