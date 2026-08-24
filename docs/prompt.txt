@@ -1,0 +1,21 @@
+Before implementing this phase, read 
+
+[PROJECT_CONTEXT.md](file;file:///c%3A/Users/shukr/Desktop/Projects/breakmyapp/PROJECT_CONTEXT.md) 
+  and 
+[ARCHITECTURE.md](file;file:///c%3A/Users/shukr/Desktop/Projects/breakmyapp/ARCHITECTURE.md) 
+Treat them as the source of truth for product requirements and system architecture. Do not contradict or casually modify them. Inspect the existing implementation before making changes.
+
+---
+Completed Phases: 
+PHASE 0: ARCHITECTURE AND REPOSITORY FOUNDATION.
+PHASE 1: IDENTITY, ORGANIZATIONS, PROJECTS, AND ACCESS CONTROL.
+PHASE 2: TARGET REGISTRATION AND AUTHORIZED TESTING BOUNDARY.
+PHASE 3: CREDENTIAL VAULT AND ROLE MODEL.
+PHASE 4: EXECUTION PLANE AND SANDBOX.
+PHASE 5: APPLICATION EXPLORATION AND APPLICATION MODEL.
+---
+
+
+---
+
+The implementation must be 100% accurate and free of mistakes. Ensure that it does not introduce any bugs, logical errors, race conditions, or regressions. The implementation should be robust, production-ready, and follow best engineering practices. Take your time, think through the solution carefully, and validate every edge case before finalizing it.
