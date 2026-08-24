@@ -1,8 +1,9 @@
 import asyncio
 import logging
+import os
+
 from temporalio.client import Client
 from temporalio.worker import Worker
-import os
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -1,79 +1,88 @@
-from pydantic import BaseModel, Field
-from datetime import datetime
-from typing import Optional, List, Dict, Any
+import enum
+import uuid
+from datetime import UTC, datetime
 
-# Phase 0 Placeholders for domain entities
+from sqlalchemy import JSON, Column, DateTime, Enum, ForeignKey, String
+from sqlalchemy.orm import relationship
 
-class Organization(BaseModel):
-    id: str
-    name: str
-    created_at: datetime
+from .database import Base
 
-class User(BaseModel):
-    id: str
-    email: str
-    organization_id: str
 
-class Project(BaseModel):
-    id: str
-    organization_id: str
-    name: str
+def generate_uuid():
+    return str(uuid.uuid4())
 
-class Target(BaseModel):
-    id: str
-    project_id: str
-    base_url: str
-    allowed_hosts: List[str]
-    environment: str
+def utc_now():
+    return datetime.now(UTC)
 
-class Credential(BaseModel):
-    id: str
-    project_id: str
-    label: str
-    role: str
-    secret_reference: str  # Note: NOT a plaintext password
+class Role(str, enum.Enum):
+    OWNER = "owner"
+    ADMIN = "admin"
+    MEMBER = "member"
+    VIEWER = "viewer"
 
-class TestPlan(BaseModel):
-    id: str
-    project_id: str
-    name: str
+class User(Base):
+    __tablename__ = "users"
 
-class TestCase(BaseModel):
-    id: str
-    test_plan_id: str
+    id = Column(String, primary_key=True, default=generate_uuid)
+    email = Column(String, unique=True, index=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
-class TestRun(BaseModel):
-    id: str
-    test_plan_id: str
-    target_id: str
-    status: str
+    organizations = relationship("OrganizationMembership", back_populates="user", cascade="all, delete-orphan")
+    projects = relationship("ProjectMembership", back_populates="user", cascade="all, delete-orphan")
 
-class Execution(BaseModel):
-    id: str
-    test_run_id: str
+class Organization(Base):
+    __tablename__ = "organizations"
 
-class Hypothesis(BaseModel):
-    id: str
-    execution_id: str
-    description: str
+    id = Column(String, primary_key=True, default=generate_uuid)
+    name = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
-class Evidence(BaseModel):
-    id: str
-    execution_id: str
-    s3_key: str
+    members = relationship("OrganizationMembership", back_populates="organization", cascade="all, delete-orphan")
+    projects = relationship("Project", back_populates="organization", cascade="all, delete-orphan")
 
-class Finding(BaseModel):
-    id: str
-    test_run_id: str
-    status: str
-    description: str
+class OrganizationMembership(Base):
+    __tablename__ = "organization_memberships"
 
-class Verification(BaseModel):
-    id: str
-    finding_id: str
-    status: str
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    organization_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), primary_key=True)
+    role = Column(Enum(Role, name="role_enum"), nullable=False, default=Role.VIEWER)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
-class PolicyViolation(BaseModel):
-    id: str
-    execution_id: str
-    reason: str
+    user = relationship("User", back_populates="organizations")
+    organization = relationship("Organization", back_populates="members")
+
+class Project(Base):
+    __tablename__ = "projects"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    organization_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+    organization = relationship("Organization", back_populates="projects")
+    members = relationship("ProjectMembership", back_populates="project", cascade="all, delete-orphan")
+
+class ProjectMembership(Base):
+    __tablename__ = "project_memberships"
+
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), primary_key=True)
+    role = Column(Enum(Role, name="role_enum"), nullable=False, default=Role.VIEWER)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+    user = relationship("User", back_populates="projects")
+    project = relationship("Project", back_populates="members")
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    timestamp = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
+    organization_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
+    actor_id = Column(String, nullable=True) # User ID or Service
+    action = Column(String, nullable=False)
+    resource_type = Column(String, nullable=False)
+    resource_id = Column(String, nullable=False)
+    metadata_ = Column("metadata", JSON, nullable=True)
+    ip_hash_or_safe_network_metadata = Column(String, nullable=True)
+
