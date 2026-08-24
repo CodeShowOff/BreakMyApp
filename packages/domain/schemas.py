@@ -79,3 +79,22 @@ class TargetResponse(TargetBase):
     created_at: datetime
     updated_at: datetime
     model_config = ConfigDict(from_attributes=True)
+
+
+class CredentialBase(BaseModel):
+    label: str = Field(..., description="E.g., Customer A, Admin, etc.")
+    role_label: str = Field(..., description="Role of the identity, e.g., admin, user")
+    identity_type: str = Field(..., description="Type of identity, e.g., user, service_account")
+    login_strategy: str = Field(default="username + password")
+    metadata_: dict[str, Any] | None = Field(None, alias="metadata")
+
+class CredentialCreate(CredentialBase):
+    secret_data: dict[str, str] = Field(..., description="The actual secrets (e.g., username, password) to be stored in the vault.")
+
+class CredentialResponse(CredentialBase):
+    id: str
+    project_id: str
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+

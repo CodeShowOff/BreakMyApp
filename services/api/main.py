@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from services.api.api.middleware import RequestIDMiddleware
+from services.api.api.middleware import RedactionMiddleware, RequestIDMiddleware
 from services.api.api.v1.router import api_router
 
 logging.basicConfig(level=logging.INFO)
@@ -19,6 +19,7 @@ async def lifespan(app: FastAPI) -> typing.AsyncGenerator[None, None]:
 app = FastAPI(title="BreakMyApp API", version="0.1.0", lifespan=lifespan)
 
 # Add Middlewares
+app.add_middleware(RedactionMiddleware)
 app.add_middleware(RequestIDMiddleware)
 
 # Include Routers

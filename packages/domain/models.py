@@ -119,3 +119,20 @@ class Target(Base):
 
     project = relationship("Project", back_populates="targets")
     creator = relationship("User")
+
+class Credential(Base):
+    __tablename__ = "credentials"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    label = Column(String, nullable=False)
+    role_label = Column(String, nullable=False)
+    identity_type = Column(String, nullable=False)
+    secret_reference = Column(String, nullable=False)
+    login_strategy = Column(String, nullable=False)
+    metadata_ = Column("metadata", JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    project = relationship("Project")
+
