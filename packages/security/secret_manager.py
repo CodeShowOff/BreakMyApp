@@ -1,8 +1,6 @@
-import json
 import logging
 import uuid
 from abc import ABC, abstractmethod
-from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -10,22 +8,18 @@ class SecretProvider(ABC):
     @abstractmethod
     async def get_credential(self, reference_id: str) -> dict[str, str]:
         """Retrieve the secret values by their reference ID."""
-        pass
 
     @abstractmethod
     async def create_credential(self, secret_data: dict[str, str]) -> str:
         """Store the secret values and return a reference ID."""
-        pass
 
     @abstractmethod
     async def rotate_credential(self, reference_id: str, new_secret_data: dict[str, str]) -> None:
         """Update the secret values for a given reference ID."""
-        pass
 
     @abstractmethod
     async def delete_credential(self, reference_id: str) -> None:
         """Delete the secret values for a given reference ID."""
-        pass
 
 class ManagedSecretProvider(SecretProvider):
     """

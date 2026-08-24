@@ -1,13 +1,14 @@
 from datetime import timedelta
-from typing import Any, Dict, List
+from typing import Any
 
 from temporalio import workflow
 from temporalio.common import RetryPolicy
 
+
 @workflow.defn
 class CreateTestRun:
     @workflow.run
-    async def run(self, input_data: Dict[str, Any]) -> None:
+    async def run(self, input_data: dict[str, Any]) -> None:
         test_run_id = input_data["test_run_id"]
         project_id = input_data["project_id"]
         target_id = input_data["target_id"]

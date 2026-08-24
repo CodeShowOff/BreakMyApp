@@ -1,9 +1,13 @@
 from typing import Any
+
 from packages.browser.interface import RestrictedBrowser
-from packages.domain.models import Target
 from packages.domain.app_model import (
-    ApplicationModelPayload, Observation, ConfidenceLevel, Page, Action, Object, Relationship
+    ApplicationModelPayload,
+    ConfidenceLevel,
+    Observation,
 )
+from packages.domain.models import Target
+
 
 class ApplicationExplorer:
     """
@@ -43,7 +47,7 @@ class ApplicationExplorer:
                 actor_role="unknown",
                 page=str(self.target.base_url),
                 action="navigate",
-                visible_effect=f"Failed to navigate: {str(e)}",
+                visible_effect=f"Failed to navigate: {e!s}",
                 confidence=ConfidenceLevel.CONFIRMED
             ))
             return self.model_payload
@@ -99,7 +103,7 @@ class ApplicationExplorer:
                     actor_role="unknown",
                     page="unknown",
                     action="unknown",
-                    visible_effect=f"Error during step extraction/inference: {str(e)}",
+                    visible_effect=f"Error during step extraction/inference: {e!s}",
                     confidence=ConfidenceLevel.CONFIRMED
                 ))
                 # Depending on the error, we could retry or break

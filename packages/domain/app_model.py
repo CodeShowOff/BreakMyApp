@@ -1,6 +1,8 @@
 import enum
 from typing import Any
+
 from pydantic import BaseModel, Field
+
 
 class ConfidenceLevel(str, enum.Enum):
     CONFIRMED = "confirmed"
@@ -67,6 +69,22 @@ class Observation(BaseModel):
     potential_relationship: str | None = None
     confidence: ConfidenceLevel = ConfidenceLevel.UNKNOWN
 
+class State(BaseModel):
+    id: str
+    name: str = Field(..., description="Name of the state, e.g., 'Draft', 'Approved'")
+    object_id: str | None = Field(None, description="The object this state belongs to")
+
+class TransitionPrecondition(BaseModel):
+    condition_type: str = Field(..., description="E.g., 'role_required', 'field_value'")
+    expected_value: Any | None = None
+
+class StateTransition(BaseModel):
+    id: str
+    from_state_id: str
+    to_state_id: str
+    action_id: str | None = Field(None, description="Action triggering the transition")
+    preconditions: list[TransitionPrecondition] = Field(default_factory=list)
+
 class ApplicationModelPayload(BaseModel):
     pages: list[Page] = Field(default_factory=list)
     actions: list[Action] = Field(default_factory=list)
@@ -76,3 +94,5 @@ class ApplicationModelPayload(BaseModel):
     endpoint_observations: list[EndpointObservation] = Field(default_factory=list)
     state_observations: list[StateObservation] = Field(default_factory=list)
     observations_log: list[Observation] = Field(default_factory=list)
+    states: list[State] = Field(default_factory=list)
+    state_transitions: list[StateTransition] = Field(default_factory=list)

@@ -1,9 +1,17 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field
 
-from .models import AuthorizationStatus, Environment, TestRunStatus, ExecutionJobStatus, ExecutionAttemptStatus, SandboxStatus
+from .models import (
+    AuthorizationStatus,
+    Environment,
+    ExecutionAttemptStatus,
+    ExecutionJobStatus,
+    SandboxStatus,
+    TestRunStatus,
+)
+
 
 class UserBase(BaseModel):
     email: str
@@ -178,4 +186,102 @@ class ApplicationModelResponse(ApplicationModelBase):
     id: str
     created_at: datetime
     updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class BusinessRuleBase(BaseModel):
+    project_id: str
+    rule_source: str
+    name: str
+    description: str
+
+class BusinessRuleCreate(BusinessRuleBase):
+    pass
+
+class BusinessRuleResponse(BusinessRuleBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class BusinessRuleVersionBase(BaseModel):
+    rule_id: str
+    version: int
+    content: dict[str, Any]
+
+class BusinessRuleVersionCreate(BusinessRuleVersionBase):
+    pass
+
+class BusinessRuleVersionResponse(BusinessRuleVersionBase):
+    id: str
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TestStrategyBase(BaseModel):
+    name: str
+    version: str
+    description: str
+    required_roles: list[str]
+    required_capabilities: list[str]
+    risk_level: str
+    destructive: bool
+    enabled: bool
+
+class TestStrategyCreate(TestStrategyBase):
+    pass
+
+class TestStrategyResponse(TestStrategyBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TestCaseBase(BaseModel):
+    strategy_id: str
+    name: str
+    description: str
+
+class TestCaseCreate(TestCaseBase):
+    pass
+
+class TestCaseResponse(TestCaseBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TestHypothesisBase(BaseModel):
+    execution_attempt_id: str
+    test_case_id: str | None = None
+    description: str
+    evidence_references: dict[str, Any]
+
+class TestHypothesisCreate(TestHypothesisBase):
+    pass
+
+class TestHypothesisResponse(TestHypothesisBase):
+    id: str
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TestResultBase(BaseModel):
+    execution_attempt_id: str
+    test_hypothesis_id: str | None = None
+    expected_behavior: str
+    observed_behavior: str
+    rule_or_state_tested: str
+    evidence: dict[str, Any]
+    strategy_version: str
+
+class TestResultCreate(TestResultBase):
+    pass
+
+class TestResultResponse(TestResultBase):
+    id: str
+    created_at: datetime
     model_config = ConfigDict(from_attributes=True)

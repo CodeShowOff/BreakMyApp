@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Column, DateTime, Enum, ForeignKey, String, Integer
+from sqlalchemy import JSON, Column, DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -240,3 +240,98 @@ class ApplicationModel(Base):
     project = relationship("Project")
     target = relationship("Target")
     test_run = relationship("TestRun")
+
+
+class RuleSource(str, enum.Enum):
+    USER_DEFINED = "user_defined"
+    APPLICATION_INFERRED = "application_inferred"
+    SYSTEM_GENERATED = "system_generated"
+
+class RiskLevel(str, enum.Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+class BusinessRule(Base):
+    __tablename__ = "business_rules"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    rule_source: Mapped[RuleSource] = mapped_column(Enum(RuleSource, name="rule_source_enum"), nullable=False)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    project = relationship("Project")
+    versions = relationship("BusinessRuleVersion", back_populates="rule", cascade="all, delete-orphan")
+
+class BusinessRuleVersion(Base):
+    __tablename__ = "business_rule_versions"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    rule_id = Column(String, ForeignKey("business_rules.id", ondelete="CASCADE"), nullable=False, index=True)
+    version = Column(Integer, nullable=False)
+    content = Column(JSON, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+    rule = relationship("BusinessRule", back_populates="versions")
+
+class TestStrategy(Base):
+    __tablename__ = "test_strategies"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    name = Column(String, nullable=False)
+    version = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    required_roles = Column(JSON, nullable=False)
+    required_capabilities = Column(JSON, nullable=False)
+    risk_level: Mapped[RiskLevel] = mapped_column(Enum(RiskLevel, name="risk_level_enum"), nullable=False)
+    destructive = Column(Integer, nullable=False, default=0)
+    enabled = Column(Integer, nullable=False, default=1)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    test_cases = relationship("TestCase", back_populates="strategy", cascade="all, delete-orphan")
+
+class TestCase(Base):
+    __tablename__ = "test_cases"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    strategy_id = Column(String, ForeignKey("test_strategies.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    strategy = relationship("TestStrategy", back_populates="test_cases")
+
+class TestHypothesis(Base):
+    __tablename__ = "test_hypotheses"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    execution_attempt_id = Column(String, ForeignKey("execution_attempts.id", ondelete="CASCADE"), nullable=False, index=True)
+    test_case_id = Column(String, ForeignKey("test_cases.id", ondelete="SET NULL"), nullable=True, index=True)
+    description = Column(String, nullable=False)
+    evidence_references = Column(JSON, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+    attempt = relationship("ExecutionAttempt")
+    test_case = relationship("TestCase")
+
+class TestResult(Base):
+    __tablename__ = "test_results"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    execution_attempt_id = Column(String, ForeignKey("execution_attempts.id", ondelete="CASCADE"), nullable=False, index=True)
+    test_hypothesis_id = Column(String, ForeignKey("test_hypotheses.id", ondelete="SET NULL"), nullable=True, index=True)
+    expected_behavior = Column(String, nullable=False)
+    observed_behavior = Column(String, nullable=False)
+    rule_or_state_tested = Column(String, nullable=False)
+    evidence = Column(JSON, nullable=False)
+    strategy_version = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+    attempt = relationship("ExecutionAttempt")
+    hypothesis = relationship("TestHypothesis")

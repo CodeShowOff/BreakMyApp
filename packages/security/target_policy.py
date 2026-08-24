@@ -1,8 +1,9 @@
-import socket
 import ipaddress
+import socket
 from urllib.parse import urlparse
 
 from packages.domain.schemas import TargetResponse
+
 
 class TargetPolicy:
     def __init__(self, target: TargetResponse):
