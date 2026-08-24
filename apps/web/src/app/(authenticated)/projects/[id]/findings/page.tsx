@@ -1,12 +1,24 @@
 import { auth } from '@clerk/nextjs/server';
 import { Search, Filter, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { getFindings } from "@/lib/api";
 
 import { use } from "react";
 export default async function Findings(props: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(props.params);
   await auth.protect();
   
+  let findings = [];
+  try {
+    findings = await getFindings(unwrappedParams.id);
+  } catch (error) {
+    console.error("Failed to fetch findings", error);
+  }
+
+  const highRisk = findings.filter((f: any) => f.severity === 'high' || f.severity === 'critical');
+  const verifying = findings.filter((f: any) => f.status === 'verifying');
+  const resolved = findings.filter((f: any) => f.status === 'resolved');
+
   return (
     <div className="max-w-6xl">
       <header className="mb-8 border-b border-gray-200 dark:border-white/10 pb-4 flex justify-between items-end">
@@ -32,20 +44,20 @@ export default async function Findings(props: { params: Promise<{ id: string }> 
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="p-4 border border-gray-200 dark:border-white/10 rounded bg-gray-50 dark:bg-[#0f0f0f] flex justify-between items-center">
-          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Verified</span>
-          <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">12</span>
+          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total</span>
+          <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">{findings.length}</span>
         </div>
         <div className="p-4 border border-rose-200 dark:border-rose-900/30 rounded bg-rose-50 dark:bg-rose-900/10 flex justify-between items-center">
           <span className="text-sm font-medium text-rose-700 dark:text-rose-400">High Risk</span>
-          <span className="text-xl font-semibold text-rose-700 dark:text-rose-400">3</span>
+          <span className="text-xl font-semibold text-rose-700 dark:text-rose-400">{highRisk.length}</span>
         </div>
         <div className="p-4 border border-gray-200 dark:border-white/10 rounded bg-gray-50 dark:bg-[#0f0f0f] flex justify-between items-center">
           <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Verifying</span>
-          <span className="text-xl font-semibold text-blue-600 dark:text-blue-400">1</span>
+          <span className="text-xl font-semibold text-blue-600 dark:text-blue-400">{verifying.length}</span>
         </div>
         <div className="p-4 border border-emerald-200 dark:border-emerald-900/30 rounded bg-emerald-50 dark:bg-emerald-900/10 flex justify-between items-center">
           <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Resolved</span>
-          <span className="text-xl font-semibold text-emerald-700 dark:text-emerald-400">45</span>
+          <span className="text-xl font-semibold text-emerald-700 dark:text-emerald-400">{resolved.length}</span>
         </div>
       </div>
 
@@ -62,71 +74,48 @@ export default async function Findings(props: { params: Promise<{ id: string }> 
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-white/10">
-            <tr className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors group">
-              <td className="py-4 px-4 text-sm font-mono text-gray-500">fnd_9x28</td>
-              <td className="py-4 px-4">
-                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Cross-Tenant Data Exposure via IDOR</div>
-                <div className="text-xs text-gray-500 mt-1">/api/invoices/[id]</div>
-              </td>
-              <td className="py-4 px-4">
-                <span className="text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 px-2 py-1 rounded border border-rose-200 dark:border-rose-900/50">Confirmed</span>
-              </td>
-              <td className="py-4 px-4">
-                <span className="text-xs font-medium text-rose-700 dark:text-rose-500">High</span>
-              </td>
-              <td className="py-4 px-4 text-sm text-gray-500">2 days ago</td>
-              <td className="py-4 px-4 text-right">
-                <Link href={`/projects/${unwrappedParams.id}/findings/fnd_9x28`}>
-                  <button className="text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 p-1">
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </Link>
-              </td>
-            </tr>
-            <tr className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors group">
-              <td className="py-4 px-4 text-sm font-mono text-gray-500">fnd_3b11</td>
-              <td className="py-4 px-4">
-                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Privilege Escalation in Settings Update</div>
-                <div className="text-xs text-gray-500 mt-1">/api/settings/update (Role boundary)</div>
-              </td>
-              <td className="py-4 px-4">
-                <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded border border-blue-200 dark:border-blue-900/50 flex items-center w-max gap-1">
-                  Verifying...
-                </span>
-              </td>
-              <td className="py-4 px-4">
-                <span className="text-xs font-medium text-rose-700 dark:text-rose-500">High</span>
-              </td>
-              <td className="py-4 px-4 text-sm text-gray-500">1 hour ago</td>
-              <td className="py-4 px-4 text-right">
-                <Link href={`/projects/${unwrappedParams.id}/findings/fnd_3b11`}>
-                  <button className="text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 p-1">
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </Link>
-              </td>
-            </tr>
-            <tr className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors group">
-              <td className="py-4 px-4 text-sm font-mono text-gray-500">fnd_7m99</td>
-              <td className="py-4 px-4">
-                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Information Disclosure via Verbose Errors</div>
-                <div className="text-xs text-gray-500 mt-1">/api/users/profile</div>
-              </td>
-              <td className="py-4 px-4">
-                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded border border-emerald-200 dark:border-emerald-900/50">Resolved</span>
-              </td>
-              <td className="py-4 px-4">
-                <span className="text-xs font-medium text-amber-700 dark:text-amber-500">Low</span>
-              </td>
-              <td className="py-4 px-4 text-sm text-gray-500">14 days ago</td>
-              <td className="py-4 px-4 text-right">
-                <Link href={`/projects/${unwrappedParams.id}/findings/fnd_7m99`}>
-                  <button className="text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 p-1">
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </Link>
-              </td>
-            </tr>
+            {findings.map((finding: any) => (
+              <tr key={finding.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors group">
+                <td className="py-4 px-4 text-sm font-mono text-gray-500">{finding.id.split('-')[0]}</td>
+                <td className="py-4 px-4">
+                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{finding.title}</div>
+                  <div className="text-xs text-gray-500 mt-1">{finding.target_id}</div>
+                </td>
+                <td className="py-4 px-4">
+                  <span className={`text-xs font-medium px-2 py-1 rounded border flex items-center w-max gap-1 ${
+                    finding.status === 'resolved' 
+                      ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-900/50'
+                      : finding.status === 'verifying'
+                      ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-900/50'
+                      : 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-900/50'
+                  }`}>
+                    {finding.status}
+                  </span>
+                </td>
+                <td className="py-4 px-4">
+                  <span className={`text-xs font-medium ${
+                    finding.severity === 'high' || finding.severity === 'critical' 
+                      ? 'text-rose-700 dark:text-rose-500' 
+                      : finding.severity === 'medium'
+                      ? 'text-amber-700 dark:text-amber-500'
+                      : 'text-gray-600'
+                  }`}>{finding.severity}</span>
+                </td>
+                <td className="py-4 px-4 text-sm text-gray-500">{new Date(finding.first_detected).toLocaleDateString()}</td>
+                <td className="py-4 px-4 text-right">
+                  <Link href={`/projects/${unwrappedParams.id}/findings/${finding.id}`}>
+                    <button className="text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 p-1">
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </Link>
+                </td>
+              </tr>
+            ))}
+            {findings.length === 0 && (
+              <tr>
+                <td colSpan={6} className="py-8 text-center text-sm text-gray-500">No findings available.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

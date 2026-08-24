@@ -1,9 +1,24 @@
 import { auth } from '@clerk/nextjs/server';
 import { Activity, Database } from "lucide-react";
+import { getProject, getFindings, getTestRuns } from "@/lib/api";
 
-export default async function ProjectOverview() {
+export default async function ProjectOverview({ params }: { params: { id: string } }) {
   await auth.protect();
   
+  let project = null;
+  let findings = [];
+  let testRuns = [];
+  try {
+    project = await getProject(params.id);
+    findings = await getFindings(params.id);
+    testRuns = await getTestRuns(params.id);
+  } catch (error) {
+    console.error("Failed to fetch project details", error);
+  }
+
+  const activeFindings = findings.filter((f: any) => f.status !== 'resolved');
+  const lastTestRun = testRuns.length > 0 ? new Date(testRuns[0].created_at).toLocaleString() : 'Never';
+
   return (
     <div className="max-w-5xl">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -20,17 +35,17 @@ export default async function ProjectOverview() {
         
         <div className="p-4 border border-gray-200 dark:border-white/10 rounded bg-gray-50 dark:bg-[#0f0f0f]">
           <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Last Test Run</div>
-          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">2 hours ago</div>
+          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{lastTestRun}</div>
         </div>
 
         <div className="p-4 border border-gray-200 dark:border-white/10 rounded bg-gray-50 dark:bg-[#0f0f0f]">
           <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Active Findings</div>
-          <div className="text-sm font-medium text-rose-600 dark:text-rose-400">3 Issues</div>
+          <div className="text-sm font-medium text-rose-600 dark:text-rose-400">{activeFindings.length} Issues</div>
         </div>
 
         <div className="p-4 border border-gray-200 dark:border-white/10 rounded bg-gray-50 dark:bg-[#0f0f0f]">
-          <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Target Environments</div>
-          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Prod, Staging</div>
+          <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Project Targets</div>
+          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{project?.targets?.length || 0} Environment(s)</div>
         </div>
       </div>
 
@@ -42,27 +57,18 @@ export default async function ProjectOverview() {
             </h2>
           </div>
           <div className="divide-y divide-gray-200 dark:divide-white/10">
-            <div className="p-4 text-sm">
-              <div className="flex justify-between mb-1">
-                <span className="font-medium text-gray-900 dark:text-gray-100">Test Run Completed</span>
-                <span className="text-gray-500">2h ago</span>
+            {testRuns.slice(0, 3).map((run: any) => (
+              <div key={run.id} className="p-4 text-sm">
+                <div className="flex justify-between mb-1">
+                  <span className="font-medium text-gray-900 dark:text-gray-100">Test Run {run.status}</span>
+                  <span className="text-gray-500">{new Date(run.created_at).toLocaleDateString()}</span>
+                </div>
+                <p className="text-gray-600 dark:text-gray-400">Run ID: <span className="font-mono text-xs">{run.id.split('-')[0]}</span>.</p>
               </div>
-              <p className="text-gray-600 dark:text-gray-400">Run ID: <span className="font-mono text-xs">tr_893jd2</span> on Production. Found 1 new issue.</p>
-            </div>
-            <div className="p-4 text-sm">
-              <div className="flex justify-between mb-1">
-                <span className="font-medium text-gray-900 dark:text-gray-100">Application Model Updated</span>
-                <span className="text-gray-500">5h ago</span>
-              </div>
-              <p className="text-gray-600 dark:text-gray-400">Discovered 2 new API endpoints during exploratory phase.</p>
-            </div>
-            <div className="p-4 text-sm">
-              <div className="flex justify-between mb-1">
-                <span className="font-medium text-gray-900 dark:text-gray-100">Finding Resolved</span>
-                <span className="text-gray-500">1d ago</span>
-              </div>
-              <p className="text-gray-600 dark:text-gray-400">Issue <span className="font-mono text-xs">fnd_9x28</span> verified as resolved in Staging.</p>
-            </div>
+            ))}
+            {testRuns.length === 0 && (
+              <div className="p-4 text-sm text-gray-500">No recent activity.</div>
+            )}
           </div>
         </section>
 
@@ -75,16 +81,12 @@ export default async function ProjectOverview() {
             </div>
             <div className="p-4 space-y-3 bg-white dark:bg-[#0a0a0a]">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Version</span>
-                <span className="font-mono text-gray-900 dark:text-gray-100">v1.4.2</span>
+                <span className="text-gray-600 dark:text-gray-400">Total Runs</span>
+                <span className="font-mono text-gray-900 dark:text-gray-100">{testRuns.length}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Known Endpoints</span>
-                <span className="text-gray-900 dark:text-gray-100">142</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Authorized Roles</span>
-                <span className="text-gray-900 dark:text-gray-100">3</span>
+                <span className="text-gray-600 dark:text-gray-400">Total Findings</span>
+                <span className="text-gray-900 dark:text-gray-100">{findings.length}</span>
               </div>
             </div>
           </div>

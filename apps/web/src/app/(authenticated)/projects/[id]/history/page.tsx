@@ -1,12 +1,20 @@
 import { auth } from '@clerk/nextjs/server';
 import { History as HistoryIcon, Search, Filter } from "lucide-react";
 import Link from "next/link";
+import { getTestRuns } from "@/lib/api";
 
 import { use } from "react";
 export default async function TestHistory(props: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(props.params);
   await auth.protect();
   
+  let testRuns = [];
+  try {
+    testRuns = await getTestRuns(unwrappedParams.id);
+  } catch (error) {
+    console.error("Failed to fetch test runs", error);
+  }
+
   return (
     <div className="max-w-6xl">
       <header className="mb-8 border-b border-gray-200 dark:border-white/10 pb-4 flex justify-between items-end">
@@ -45,39 +53,36 @@ export default async function TestHistory(props: { params: Promise<{ id: string 
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-white/10 text-sm">
-            {[
-              { id: "tr_893jd2", date: "Oct 24, 2026 14:30", env: "Production", type: "Full", status: "Completed", findings: 1 },
-              { id: "tr_882cc1", date: "Oct 23, 2026 09:15", env: "Staging", type: "Regression", status: "Completed", findings: 0 },
-              { id: "tr_871bb9", date: "Oct 22, 2026 16:45", env: "Development", type: "Targeted", status: "Failed", findings: 0 },
-              { id: "tr_860aa8", date: "Oct 20, 2026 11:20", env: "Production", type: "Full", status: "Completed", findings: 3 },
-            ].map((run) => (
+            {testRuns.map((run: any) => (
               <tr key={run.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
                 <td className="py-3 px-4 font-mono text-gray-600 dark:text-gray-400">
-                  <Link href={`/projects/${unwrappedParams.id}/runs/${run.id}`} className="hover:underline text-gray-900 dark:text-gray-100">{run.id}</Link>
+                  <Link href={`/projects/${unwrappedParams.id}/runs/${run.id}`} className="hover:underline text-gray-900 dark:text-gray-100">{run.id.split('-')[0]}</Link>
                 </td>
-                <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{run.date}</td>
-                <td className="py-3 px-4 text-gray-900 dark:text-gray-100">{run.env}</td>
-                <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{run.type}</td>
+                <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{new Date(run.created_at).toLocaleString()}</td>
+                <td className="py-3 px-4 text-gray-900 dark:text-gray-100">{run.target_id}</td>
+                <td className="py-3 px-4 text-gray-600 dark:text-gray-400">Full</td>
                 <td className="py-3 px-4">
-                  <span className={`text-xs px-2 py-0.5 rounded border ${
-                      run.status === 'Completed' 
+                  <span className={`text-xs px-2 py-0.5 rounded border flex w-max ${
+                      run.status === 'completed' 
                         ? 'text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/5 border-gray-200 dark:border-white/10' 
+                        : run.status === 'running' || run.status === 'pending'
+                        ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-900/50'
                         : 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-900/50'
                   }`}>
                     {run.status}
                   </span>
                 </td>
                 <td className="py-3 px-4">
-                  {run.findings > 0 ? (
-                    <span className="text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-900/50">
-                      {run.findings}
-                    </span>
-                  ) : (
-                    <span className="text-gray-400">-</span>
-                  )}
+                  {/* Ideally fetch findings count for the run */}
+                  <span className="text-gray-400">-</span>
                 </td>
               </tr>
             ))}
+            {testRuns.length === 0 && (
+              <tr>
+                <td colSpan={6} className="py-8 text-center text-sm text-gray-500">No test runs available.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

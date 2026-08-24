@@ -41,6 +41,20 @@ class OrganizationResponse(OrganizationBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class OrganizationMemberCreate(BaseModel):
+    email: str
+    role: str = "MEMBER"
+
+class OrganizationMemberResponse(BaseModel):
+    id: str
+    user_id: str
+    organization_id: str
+    role: str
+    email: str | None = None
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ProjectBase(BaseModel):
     name: str
 
