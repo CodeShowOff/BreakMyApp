@@ -1,5 +1,9 @@
 # BreakMyApp
 
+> ⚠️ Project status: Terminated
+>
+> This project was under active development but has now been terminated as priorities shifted. The repository is kept for reference only; no further development is planned.
+
 Production-grade SaaS for authorized adversarial testing of web applications.
 
 ## Prerequisites
